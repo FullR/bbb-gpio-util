@@ -1,5 +1,5 @@
 # Linux GPIO Utility
-Written for use with Beaglebone Black on Ubuntu.
+Written for use with Ubuntu on a Beaglebone Black.
 
 ## Build
 ```bash

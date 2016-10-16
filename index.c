@@ -36,21 +36,25 @@ bool fileExists(char* filename) {
 
 char* getPinDirPath(char* pin) {
   strcpy(pinDirPathBuffer, GPIO_PATH);
-  strcat(pinDirPathBuffer, "/");
-  strcat(pinDirPathBuffer, "gpio");
+  strcat(pinDirPathBuffer, "/gpio");
   strcat(pinDirPathBuffer, pin);
-  strcat(pinDirPathBuffer, "/");
-  strcat(pinDirPathBuffer, "direction");
+  strcat(pinDirPathBuffer, "/direction");
   return pinDirPathBuffer;
 }
 
 char* getPinValuePath(char* pin) {
   strcpy(pinValuePathBuffer, GPIO_PATH);
-  strcat(pinValuePathBuffer, "/");
-  strcat(pinValuePathBuffer, "gpio");
+  strcat(pinValuePathBuffer, "/gpio");
   strcat(pinValuePathBuffer, pin);
-  strcat(pinValuePathBuffer, "/");
-  strcat(pinValuePathBuffer, "value");
+  strcat(pinValuePathBuffer, "/value");
+  return pinValuePathBuffer;
+}
+
+char* getActiveLowPath(char* pin) {
+  strcpy(pinValuePathBuffer, GPIO_PATH);
+  strcat(pinValuePathBuffer, "/gpio");
+  strcat(pinValuePathBuffer, pin);
+  strcat(pinValuePathBuffer, "/active_low");
   return pinValuePathBuffer;
 }
 
@@ -67,6 +71,10 @@ bool isValidDirection(char* direction) {
 
 bool isValidValue(char* value) {
   return strEq(value, "0") || strEq(value, "1");
+}
+
+bool isValidActiveLowValue(char* value) {
+  return isValidValue(value);
 }
 
 void printUsage(char* command) {
@@ -140,8 +148,27 @@ bool setValue(char* pin, char* value) {
   return false;
 }
 
+bool setActiveLow(char* pin, char* value) {
+  if(!isValidActiveLowValue(value)) {
+    printf("Invalid active_low value: %s\n", value);
+    return true;
+  }
+  printf("Setting active_low value of pin %s to %s\n", pin, value);
+  char* fileName = getActiveLowPath(pin);
+  if(fileExists(fileName)) {
+    bool failed = quickWriteFile(fileName, value, sizeof(char), strlen(value));
+    if(failed) {
+      printf("Failed to write active_low value\n");
+      return true;
+    }
+  } else {
+    printf("active_low file not found. Was the pin exported?\n");
+    return true;
+  }
+  return false;
+}
+
 int main(size_t argc, char* argv[]) {
-  // printf("export path = %s\nunexport path = %s\n", EXPORT_PATH, UNEXPORT_PATH);
   bool errorFlag;
 
   if(argc <= 2 || strEq("--help", argv[1])) {
@@ -169,6 +196,14 @@ int main(size_t argc, char* argv[]) {
       } else {
         char* value = argv[3];
         errorFlag = setValue(pin, value);
+      }
+    } else if(strEq(command, "set-active-low")) {
+      if(argc <= 3) {
+        printf("set-active-low requires value argument\n");
+        errorFlag = true;
+      } else {
+        char* value = argv[3];
+        errorFlag = setActiveLow(pin, value);
       }
     } else {
       errorFlag = true;
